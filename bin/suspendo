@@ -1,5 +1,7 @@
 #!/usr/bin/env ruby
+$LOAD_PATH.push File.join(File.dirname(__FILE__), "..", "lib")
 require 'optparse'
+require 'suspendo'
 
 def show_help
   puts <<-help
@@ -15,22 +17,38 @@ help
   exit
 end
 
-if ARGV.empty? || ARGV.any? { |arg| %w( -h --help -help help ).include?(arg) }
+helps = %w( -h --help -help help )
+if ARGV.empty? || ARGV.any? { |arg| helps.include?(arg) }
   show_help
+  ARGV.delete_if { |arg| helps.include?(arg) }
 end
-
-action, user = ARGV.pop, ARGV.pop
 
 options = {}
 optparse = OptionParser.new do |opts|
+  options[:username] = nil
   opts.on( '-u', '--username USER', 'Your Twitter username' ) do |username|
     options[:username] = username
   end
-
-  opts.on( '-p', '--password PASSWORD', 'Your Twitter password' ) do |password|
+  
+  options[:password] = nil
+  opts.on('-p', '--password PASSWORD', 'Your Twitter password' ) do |password|
     options[:password] = password
   end
+  
+  options[:duration] = nil
+  opts.on('-d', '--duration DAYS', 'Duration of suspension in days') do |duration|
+    options[:duration] = duration
+  end
+end
+optparse.parse!
+
+options[:action], options[:user] = ARGV.pop, ARGV.pop
+
+if options.any? { |opt| opt.nil? }
+  show_help
+  exit
 end
 
-optparse.parse!
+Suspendo.run(options)
+
 
