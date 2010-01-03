@@ -19,9 +19,7 @@ module Suspendo
     cronkey = "#{source_user}-#{target_user}"
     case options[:action]
     when "suspend"
-      puts "suspend"
       @client.friendships.destroy! :screen_name => target_user if !following?(target_user)
-      puts "0 0 0 0 #{day_of_week(duration)} 0 /Users/gaustin/Projects/suspendo/bin/supsendo --username #{options[:username]} --password #{options[:password]} #{target_user} follow"
       CronEdit::Crontab.Add cronkey, "0 0 * * #{day_of_week(duration)} * /Users/gaustin/Projects/suspendo/bin/supsendo --username #{options[:username]} --password #{options[:password]} #{target_user} follow"
     when "follow"
       @client.friendships.create! "screen_name" => target_user if following?(target_user)
