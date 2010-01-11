@@ -1,6 +1,7 @@
 require 'grackle'
 require 'cronedit'
 require 'chronic'
+require 'pp'
 
 module Suspendo
   extend self
@@ -17,20 +18,22 @@ module Suspendo
     source_user = options[:username]
     target_user = options[:user]
     cronkey = "#{source_user}-#{target_user}"
+    
+    relationship = @client.friendships.show.json?(:target_screen_name => target_user).relationship
     case options[:action]
     when "suspend"
-      @client.friendships.destroy! :screen_name => target_user if !following?(target_user)
+      @client.friendships.destroy! :user_id => relationship.target.id, :screen_name => target_user if relationship.source.following
       CronEdit::Crontab.Add cronkey, "0 0 * * #{day_of_week(duration)} * /Users/gaustin/Projects/suspendo/bin/supsendo --username #{options[:username]} --password #{options[:password]} #{target_user} follow"
     when "follow"
-      @client.friendships.create! "screen_name" => target_user if following?(target_user)
+      @client.friendships.create! :user_id => relationship.target.id, :target_screen_name => target_user if !relationship.source.following
       CronEdit::Crontab.Remove cronkey if CronEdit::Crontab.List.any? { |k,| k == cronkey }
     when "unfollow"
-      @client.friendships.destroy! "screen_name" => target_user if !following?(target_user)
+      @client.friendships.destroy! :user_id => relationship.target.id, :screen_name => target_user if relationship.source.following
     end
   end
   
   def following?(user)
-    response = @client.friendships.show.json?(:target_screen_name => user)
+    response = 
     response.relationship.source.following
   end
   
